@@ -5,11 +5,14 @@ description = "Python Implementation for EODHD API"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+ "aiohttp>=3.12.15",
  "pydantic>=2.11.7",
+ "steindamm>=0.8.0",
 ]
 
 [dependency-groups]
 dev = [
+    "aioresponses",
     "pre-commit",
     "printf-log-formatter",
     "coverage",
