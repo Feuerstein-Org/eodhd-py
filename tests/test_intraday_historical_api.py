@@ -6,8 +6,8 @@ from typing import Any
 
 from pytest_mock import MockerFixture
 from conftest import MockApiFactory
-import eodhd_py.intraday_historical
-from eodhd_py.intraday_historical import IntradayHistoricalApi
+import eodhd_py.base
+from eodhd_py.base import IntradayHistoricalApi
 from eodhd_py.base import EodhdApi, EodhdApiConfig
 from eodhd_py.utils import validate_normalize_symbol
 
@@ -66,8 +66,8 @@ async def test_parameters(mock_api_factory: MockApiFactory, test_case: dict[str,
 @pytest.mark.asyncio
 async def test_function_calls_validators(mocker: MockerFixture, mock_api_factory: MockApiFactory) -> None:
     """Test that IntradayHistoricalApi calls validation functions."""
-    spy_validate_normalize_symbol = mocker.spy(eodhd_py.intraday_historical, "validate_normalize_symbol")
-    spy_validate_interval = mocker.spy(eodhd_py.intraday_historical, "validate_interval")
+    spy_validate_normalize_symbol = mocker.spy(eodhd_py.base, "validate_normalize_symbol")
+    spy_validate_interval = mocker.spy(eodhd_py.base, "validate_interval")
 
     api, _ = mock_api_factory.create(IntradayHistoricalApi)
     await api.get_intraday_data(symbol="GME", interval="5m")
