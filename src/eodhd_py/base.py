@@ -174,3 +174,11 @@ class EodhdApi:
         if "eod_historical_api" not in self._endpoint_instances:
             self._endpoint_instances["eod_historical_api"] = EodHistoricalApi(self.config)
         return cast(EodHistoricalApi, self._endpoint_instances["eod_historical_api"])
+
+    @property
+    def intraday_historical_api(self) -> "IntradayHistoricalApi":
+        """Lazily instantiate and return the IntradayHistoricalApi client."""
+        if "intraday_historical_api" not in self._endpoint_instances:
+            from .intraday_historical import IntradayHistoricalApi
+            self._endpoint_instances["intraday_historical_api"] = IntradayHistoricalApi(self.config)
+        return cast("IntradayHistoricalApi", self._endpoint_instances["intraday_historical_api"])

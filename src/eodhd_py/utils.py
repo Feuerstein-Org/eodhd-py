@@ -30,3 +30,10 @@ def validate_period(period: str) -> bool:
     if period not in ("d", "w", "m"):
         raise ValueError("Period must be 'd' (daily), 'w' (weekly), or 'm' (monthly)")
     return True
+
+
+def validate_interval(interval: str) -> bool:
+    """Validate interval parameter for intraday data."""
+    if interval not in ("1m", "5m", "1h"):
+        raise ValueError("Interval must be '1m', '5m', or '1h'")
+    return True
