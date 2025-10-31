@@ -71,6 +71,26 @@ async def test_function_calls_validators(mocker: MockerFixture, mock_api_factory
     spy_validate_order.assert_called_once_with("a")
     spy_validate_period.assert_called_once_with("d")
 
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interval", ["d", "w", "m"])
+async def test_interval_parameter_valid_values(interval: str, mock_api_factory: MockApiFactory) -> None:
+    """Test that valid interval values are accepted.
+    
+    Note: In EodHistoricalApi, the 'interval' parameter is aliased to 'period' 
+    and validated using validate_period(), unlike IntradayHistoricalApi which 
+    uses validate_interval() for different interval values.
+    """
+    api, mock_make_request = mock_api_factory.create(
+        EodHistoricalApi, mock_response_data=[{"date": "1986-07-24", "close": 30.9888}]
+    )
+
+    await api.get_eod_data(symbol="AAPL", interval=interval)
+
+    # Verify the call was made successfully and interval parameter was mapped to period correctly
+    mock_make_request.assert_called_once_with("eod/AAPL", params={"period": interval, "order": "a"})
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "interval",
@@ -81,8 +101,28 @@ async def test_function_calls_validators(mocker: MockerFixture, mock_api_factory
     ],
 )
 async def test_interval_parameter_invalid_values(interval: str, mock_api_factory: MockApiFactory) -> None:
-    """Test that invalid interval values raise appropriate ValueError."""
+    """Test that invalid interval values raise appropriate ValueError.
+    
+    Note: In EodHistoricalApi, the 'interval' parameter is aliased to 'period' 
+    and validated using validate_period(), so the error message refers to 'Period'.
+    """
     api, _ = mock_api_factory.create(EodHistoricalApi)
 
     with pytest.raises(ValueError, match="Period must be 'd' \\(daily\\), 'w' \\(weekly\\), or 'm' \\(monthly\\)"):
         await api.get_eod_data(symbol="AAPL", interval=interval)
+
+
+@pytest.mark.asyncio
+async def test_interval_parameter_validation_error_message_format(mock_api_factory: MockApiFactory) -> None:
+    """Test that error messages match existing validation format.
+    
+    Note: Since interval is aliased to period in EodHistoricalApi, the error 
+    message comes from validate_period() and refers to 'Period', not 'Interval'.
+    """
+    api, _ = mock_api_factory.create(EodHistoricalApi)
+
+    with pytest.raises(ValueError) as exc_info:
+        await api.get_eod_data(symbol="AAPL", interval="invalid")
+    
+    # Verify the exact error message format matches validate_period function
+    assert str(exc_info.value) == "Period must be 'd' (daily), 'w' (weekly), or 'm' (monthly)"
