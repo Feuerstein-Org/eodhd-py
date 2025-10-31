@@ -123,7 +123,7 @@ class EodHistoricalApi(BaseEodhdApi):
         """
         # Parameter aliasing for backend compatibility
         period = interval
-        
+
         params = {
             "period": period,
             "order": order,
