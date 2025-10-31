@@ -101,7 +101,7 @@ class EodHistoricalApi(BaseEodhdApi):
 
     async def get_eod_data(
         self,
-        symbol: str = "AAPL",
+        symbol: str,
         interval: str = "d",
         order: str = "a",
         from_date: datetime | None = None,
@@ -156,7 +156,7 @@ class IntradayHistoricalApi(BaseEodhdApi):
     async def get_intraday_data(
         self,
         symbol: str,
-        interval: str,
+        interval: str = "5m",
         from_date: datetime | None = None,
         to_date: datetime | None = None,
     ) -> dict[str, str | int]:
