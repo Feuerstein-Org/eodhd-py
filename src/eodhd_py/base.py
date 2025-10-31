@@ -141,11 +141,11 @@ class EodHistoricalApi(BaseEodhdApi):
 class IntradayHistoricalApi(BaseEodhdApi):
     """
     IntradayHistoricalApi endpoint class.
-    
+
     Provides access to EODHD's Intraday Historical Data API endpoint,
     which returns historical intraday data for stocks with various time
     intervals (1m, 5m, 1h) and supports date range filtering.
-    
+
     This class inherits from BaseEodhdApi and follows the same patterns
     as other endpoint classes in the library.
     """
