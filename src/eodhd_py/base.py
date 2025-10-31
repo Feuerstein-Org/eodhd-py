@@ -102,7 +102,7 @@ class EodHistoricalApi(BaseEodhdApi):
     async def get_eod_data(
         self,
         symbol: str = "AAPL",
-        period: str = "d",
+        interval: str = "d",
         order: str = "a",
         from_date: datetime | None = None,
         to_date: datetime | None = None,
@@ -112,7 +112,7 @@ class EodHistoricalApi(BaseEodhdApi):
 
         Args:
             symbol: Stock symbol (e.g., "AAPL")
-            period: Data period ("d"=daily, "w"=weekly, "m"=monthly)
+            interval: Data interval ("d"=daily, "w"=weekly, "m"=monthly)
             order: Order of data ("a"=ascending, "d"=descending)
             from_date: Start date for data
             to_date: End date for data
@@ -121,6 +121,9 @@ class EodHistoricalApi(BaseEodhdApi):
             JSON response as a dictionary
 
         """
+        # Parameter aliasing for backend compatibility
+        period = interval
+        
         params = {
             "period": period,
             "order": order,

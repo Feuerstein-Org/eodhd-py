@@ -16,7 +16,7 @@ from eodhd_py.base import EodHistoricalApi
     [
         {
             "symbol": "AAPL",
-            "period": "d",
+            "interval": "d",
             "order": "a",
             "from_date": None,
             "to_date": None,
@@ -24,7 +24,7 @@ from eodhd_py.base import EodHistoricalApi
         },
         {
             "symbol": "MSFT",
-            "period": "w",
+            "interval": "w",
             "order": "d",
             "from_date": datetime(2023, 1, 1),
             "to_date": datetime(2023, 12, 31),
@@ -32,7 +32,7 @@ from eodhd_py.base import EodHistoricalApi
         },
         {
             "symbol": "NVDA",
-            "period": "m",
+            "interval": "m",
             "order": "a",
             "from_date": datetime(2020, 1, 1),
             "to_date": datetime(2020, 12, 31),
@@ -48,7 +48,7 @@ async def test_parameters(mock_api_factory: MockApiFactory, test_case: dict[str,
 
     await api.get_eod_data(
         symbol=test_case["symbol"],
-        period=test_case["period"],
+        interval=test_case["interval"],
         order=test_case["order"],
         from_date=test_case["from_date"],
         to_date=test_case["to_date"],
@@ -65,8 +65,24 @@ async def test_function_calls_validators(mocker: MockerFixture, mock_api_factory
     spy_validate_period = mocker.spy(eodhd_py.base, "validate_period")
 
     api, _ = mock_api_factory.create(EodHistoricalApi)
-    await api.get_eod_data(symbol="GME", period="d", order="a")
+    await api.get_eod_data(symbol="GME", interval="d", order="a")
 
     spy_validate_normalize_symbol.assert_called_once_with("GME")
     spy_validate_order.assert_called_once_with("a")
     spy_validate_period.assert_called_once_with("d")
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "interval",
+    [
+        "1m",
+        "5m",
+        "1h", 
+    ],
+)
+async def test_interval_parameter_invalid_values(interval: str, mock_api_factory: MockApiFactory) -> None:
+    """Test that invalid interval values raise appropriate ValueError."""
+    api, _ = mock_api_factory.create(EodHistoricalApi)
+
+    with pytest.raises(ValueError, match="Period must be 'd' \\(daily\\), 'w' \\(weekly\\), or 'm' \\(monthly\\)"):
+        await api.get_eod_data(symbol="AAPL", interval=interval)
