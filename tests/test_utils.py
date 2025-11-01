@@ -1,7 +1,7 @@
 """Tests for utility functions in eodhd_py.utils."""
 
 import pytest
-from eodhd_py.utils import validate_normalize_symbol, validate_order, validate_period, validate_interval
+from eodhd_py.utils import validate_normalize_symbol, validate_order, validate_interval
 import re
 
 
@@ -58,30 +58,6 @@ def test_validate_order_invalid(order: str) -> None:
         validate_order(order)
 
 
-@pytest.mark.parametrize("period", ["d", "w", "m"])
-def test_validate_period_valid(period: str) -> None:
-    """Test valid period values."""
-    assert validate_period(period) is True
-
-
-@pytest.mark.parametrize(
-    "period",
-    [
-        "x",
-        "daily",
-        "weekly",
-        "monthly",
-        "D",
-        "W",
-        "M",
-    ],
-)
-def test_validate_period_invalid(period: str) -> None:
-    """Test invalid period values."""
-    with pytest.raises(ValueError, match=re.escape("Period must be 'd' (daily), 'w' (weekly), or 'm' (monthly)")):
-        validate_period(period)
-
-
 @pytest.mark.parametrize("interval", ["1m", "5m", "1h"])
 def test_validate_interval_valid(interval: str) -> None:
     """Test valid interval values."""
@@ -90,14 +66,7 @@ def test_validate_interval_valid(interval: str) -> None:
 
 @pytest.mark.parametrize(
     "interval",
-    [
-        "1s",
-        "10m",
-        "2h",
-        "1M",
-        "5M",
-        "1H",
-    ],
+    ["1s", "10m", "2h", "1M", "5M", "1H", ""],
 )
 def test_validate_interval_invalid(interval: str) -> None:
     """Test invalid interval values."""

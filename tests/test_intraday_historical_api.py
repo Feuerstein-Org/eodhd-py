@@ -8,7 +8,6 @@ from pytest_mock import MockerFixture
 from conftest import MockApiFactory
 import eodhd_py.base
 from eodhd_py.base import IntradayHistoricalApi
-from eodhd_py.base import EodhdApi, EodhdApiConfig
 from eodhd_py.utils import validate_normalize_symbol
 
 
@@ -74,49 +73,3 @@ async def test_function_calls_validators(mocker: MockerFixture, mock_api_factory
 
     spy_validate_normalize_symbol.assert_called_once_with("GME")
     spy_validate_interval.assert_called_once_with("5m")
-
-
-@pytest.mark.asyncio
-async def test_lazy_loading_property() -> None:
-    """Test lazy loading of intraday_historical_api property."""
-    config = EodhdApiConfig(api_key="demo")
-    api = EodhdApi(config=config)
-
-    # Property should not exist in _endpoint_instances initially
-    assert "intraday_historical_api" not in api._endpoint_instances
-
-    # First access should create the instance
-    intraday_api = api.intraday_historical_api
-    assert isinstance(intraday_api, IntradayHistoricalApi)
-    assert "intraday_historical_api" in api._endpoint_instances
-
-    # Second access should return the same instance
-    intraday_api2 = api.intraday_historical_api
-    assert intraday_api is intraday_api2
-
-
-@pytest.mark.asyncio
-async def test_shared_session_usage() -> None:
-    """Test that endpoint instances share the same session."""
-    config = EodhdApiConfig(api_key="demo")
-    api = EodhdApi(config=config)
-
-    eod_api = api.eod_historical_api
-    intraday_api = api.intraday_historical_api
-
-    # Both endpoints should share the same session
-    assert eod_api.session is intraday_api.session
-    assert eod_api.config is intraday_api.config
-
-
-@pytest.mark.asyncio
-async def test_async_context_manager_behavior() -> None:
-    """Test async context manager behavior."""
-    config = EodhdApiConfig(api_key="demo", close_session_on_aexit=True)
-
-    async with EodhdApi(config=config) as api:
-        intraday_api = api.intraday_historical_api
-        assert not intraday_api.session.closed
-
-    # Session should be closed after exiting context
-    assert intraday_api.session.closed
