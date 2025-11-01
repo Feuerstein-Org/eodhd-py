@@ -2,10 +2,16 @@
 
 import pytest
 from aioresponses import aioresponses
-from eodhd_py.base import BaseEodhdApi, EodhdApiConfig
+from eodhd_py.base import BaseEodhdApi, EodhdApiConfig, EodHistoricalApi, IntradayHistoricalApi, EodhdApi
 import aiohttp
 from typing import Any
 from urllib.parse import urlencode
+
+# API endpoints parameter list for parametrization of the tests: lazy_loading_property, shared_session_usage, async_context_manager_behavior
+API_ENDPOINTS = [
+    ("eod_historical_api", EodHistoricalApi),
+    ("intraday_historical_api", IntradayHistoricalApi),
+]
 
 
 @pytest.mark.asyncio
@@ -103,3 +109,58 @@ async def test_make_request_parameters(
 
     finally:
         await session.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("api_property_name", "api_class"), API_ENDPOINTS)
+async def test_lazy_loading_property(api_property_name: str, api_class: type) -> None:
+    """Test lazy loading of API endpoint properties."""
+    config = EodhdApiConfig(api_key="demo")
+    api = EodhdApi(config=config)
+
+    # Property should not exist in _endpoint_instances initially
+    assert api_property_name not in api._endpoint_instances
+
+    # First access should create the instance
+    endpoint_instance = getattr(api, api_property_name)
+    assert isinstance(endpoint_instance, api_class)
+    assert api_property_name in api._endpoint_instances
+
+    # Second access should return the same instance
+    endpoint_instance2 = getattr(api, api_property_name)
+    assert endpoint_instance is endpoint_instance2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("api_property_name", "api_class"), API_ENDPOINTS)
+async def test_shared_session_usage(api_property_name: str, api_class: type) -> None:
+    """Test that endpoint instances share the same session and configuration."""
+    config = EodhdApiConfig(api_key="demo")
+    api = EodhdApi(config=config)
+
+    # Get all available endpoint instances
+    endpoint_instances: list[BaseEodhdApi] = []
+    for prop_name, _ in API_ENDPOINTS:
+        endpoint_instances.append(getattr(api, prop_name))
+
+    # Get the current endpoint instance being tested
+    current_endpoint = getattr(api, api_property_name)
+
+    # All endpoints should share the same session and config
+    for other_endpoint in endpoint_instances:
+        assert current_endpoint.session is other_endpoint.session
+        assert current_endpoint.config is other_endpoint.config
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("api_property_name", "api_class"), API_ENDPOINTS)
+async def test_async_context_manager_behavior(api_property_name: str, api_class: type) -> None:
+    """Test async context manager behavior for API endpoints."""
+    config = EodhdApiConfig(api_key="demo", close_session_on_aexit=True)
+
+    async with EodhdApi(config=config) as api:
+        endpoint_instance = getattr(api, api_property_name)
+        assert not endpoint_instance.session.closed
+
+    # Session should be closed after exiting context
+    assert endpoint_instance.session.closed

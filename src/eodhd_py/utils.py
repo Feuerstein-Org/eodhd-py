@@ -3,6 +3,12 @@
 from re import compile as re_compile
 
 
+class ValidationError(ValueError):
+    """Custom exception for validation errors in EODHD API parameters."""
+
+    pass
+
+
 def validate_normalize_symbol(symbol: str) -> str:
     """Validate and format a stock symbol for EODHD API."""
     IS_MARKET = symbol.count(".") == 2  # noqa: PLR2004
@@ -29,4 +35,11 @@ def validate_period(period: str) -> bool:
     """Validate period parameter."""
     if period not in ("d", "w", "m"):
         raise ValueError("Period must be 'd' (daily), 'w' (weekly), or 'm' (monthly)")
+    return True
+
+
+def validate_interval(interval: str) -> bool:
+    """Validate interval parameter for intraday data."""
+    if interval not in ("1m", "5m", "1h"):
+        raise ValueError("Interval must be '1m', '5m', or '1h'")
     return True

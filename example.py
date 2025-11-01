@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(leve
 async def main() -> None:
     """Main function to demonstrate EODHD API usage."""
     async with EodhdApi() as api:
-        data = await api.eod_historical_api.get_eod_data(order="d", symbol="MSFT", period="d")
+        data = await api.eod_historical_api.get_eod_data(order="d", symbol="MSFT", interval="d")
         logging.info("Retrieved EOD data: %s", data)
     logging.info("Done")
 
