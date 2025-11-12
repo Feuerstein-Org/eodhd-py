@@ -20,6 +20,7 @@ from eodhd_py.utils import validate_normalize_symbol
             "interval": "1m",
             "from_date": None,
             "to_date": None,
+            "split_dt": False,
             "expected_params": {"interval": "1m"},
         },
         {
@@ -27,6 +28,7 @@ from eodhd_py.utils import validate_normalize_symbol
             "interval": "5m",
             "from_date": datetime(2023, 1, 1),
             "to_date": datetime(2023, 12, 31),
+            "split_dt": False,
             "expected_params": {"interval": "5m", "from": "2023-01-01", "to": "2023-12-31"},
         },
         {
@@ -34,6 +36,7 @@ from eodhd_py.utils import validate_normalize_symbol
             "interval": "1h",
             "from_date": datetime(2020, 1, 1),
             "to_date": None,
+            "split_dt": False,
             "expected_params": {"interval": "1h", "from": "2020-01-01"},
         },
         {
@@ -41,6 +44,7 @@ from eodhd_py.utils import validate_normalize_symbol
             "interval": "1m",
             "from_date": None,
             "to_date": datetime(2023, 6, 30),
+            "split_dt": True,
             "expected_params": {"interval": "1m", "to": "2023-06-30"},
         },
     ],
@@ -56,6 +60,7 @@ async def test_parameters(mock_api_factory: MockApiFactory, test_case: dict[str,
         interval=test_case["interval"],
         from_date=test_case["from_date"],
         to_date=test_case["to_date"],
+        split_dt=test_case["split_dt"],
     )
 
     expected_symbol = validate_normalize_symbol(test_case["symbol"])

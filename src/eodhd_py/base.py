@@ -159,6 +159,7 @@ class IntradayHistoricalApi(BaseEodhdApi):
         interval: str = "5m",
         from_date: datetime | None = None,
         to_date: datetime | None = None,
+        split_dt: bool = False,
     ) -> dict[str, str | int]:
         """
         Get intraday historical data for a supplied symbol.
@@ -168,6 +169,7 @@ class IntradayHistoricalApi(BaseEodhdApi):
             interval: Time interval ("1m", "5m", "1h")
             from_date: Start date for data
             to_date: End date for data
+            split_dt: If True, splits date and time into separate fields in the output
 
         Returns:
             JSON response as a dictionary containing intraday data
@@ -189,6 +191,8 @@ class IntradayHistoricalApi(BaseEodhdApi):
             params["from"] = from_date.strftime("%Y-%m-%d")
         if to_date is not None:
             params["to"] = to_date.strftime("%Y-%m-%d")
+        if split_dt:
+            params["split-dt"] = "1"
 
         return await self._make_request(f"intraday/{symbol}", params=params)
 
