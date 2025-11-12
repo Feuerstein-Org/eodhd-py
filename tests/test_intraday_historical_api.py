@@ -45,7 +45,7 @@ from eodhd_py.utils import validate_normalize_symbol
             "from_date": None,
             "to_date": datetime(2023, 6, 30),
             "split_dt": True,
-            "expected_params": {"interval": "1m", "to": "2023-06-30"},
+            "expected_params": {"interval": "1m", "to": "2023-06-30", "split-dt": "1"},
         },
     ],
 )
