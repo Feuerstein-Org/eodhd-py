@@ -72,4 +72,4 @@ async def test_function_calls_validators(mocker: MockerFixture, mock_api_factory
     await api.get_intraday_data(symbol="GME", interval="5m")
 
     spy_validate_normalize_symbol.assert_called_once_with("GME")
-    spy_validate_interval.assert_called_once_with("5m")
+    spy_validate_interval.assert_called_once_with("5m", data_type="intraday")

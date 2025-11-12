@@ -4,7 +4,7 @@ from datetime import datetime
 import aiohttp
 from typing import cast
 from pydantic import BaseModel, Field, ConfigDict
-from .utils import validate_normalize_symbol, validate_order, validate_period, validate_interval
+from .utils import validate_normalize_symbol, validate_order, validate_interval
 
 
 class EodhdApiConfig(BaseModel):
@@ -131,7 +131,7 @@ class EodHistoricalApi(BaseEodhdApi):
 
         symbol = validate_normalize_symbol(symbol)
         validate_order(order)
-        validate_period(period)
+        validate_interval(period, data_type="eod")
 
         if from_date is not None:
             params["from"] = from_date.strftime("%Y-%m-%d")
@@ -183,7 +183,7 @@ class IntradayHistoricalApi(BaseEodhdApi):
 
         # Validate parameters
         symbol = validate_normalize_symbol(symbol)
-        validate_interval(interval)
+        validate_interval(interval, data_type="intraday")
 
         if from_date is not None:
             params["from"] = from_date.strftime("%Y-%m-%d")
