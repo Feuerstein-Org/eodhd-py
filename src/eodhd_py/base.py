@@ -4,7 +4,7 @@ from datetime import datetime
 import aiohttp
 from typing import cast
 from pydantic import BaseModel, Field, ConfigDict
-from .utils import validate_normalize_symbol, validate_order, validate_period
+from .utils import validate_normalize_symbol, validate_order, validate_interval
 
 
 class EodhdApiConfig(BaseModel):
@@ -101,8 +101,8 @@ class EodHistoricalApi(BaseEodhdApi):
 
     async def get_eod_data(
         self,
-        symbol: str = "AAPL",
-        period: str = "d",
+        symbol: str,
+        interval: str = "d",
         order: str = "a",
         from_date: datetime | None = None,
         to_date: datetime | None = None,
@@ -112,7 +112,7 @@ class EodHistoricalApi(BaseEodhdApi):
 
         Args:
             symbol: Stock symbol (e.g., "AAPL")
-            period: Data period ("d"=daily, "w"=weekly, "m"=monthly)
+            interval: Data interval ("d"=daily, "w"=weekly, "m"=monthly)
             order: Order of data ("a"=ascending, "d"=descending)
             from_date: Start date for data
             to_date: End date for data
@@ -121,6 +121,9 @@ class EodHistoricalApi(BaseEodhdApi):
             JSON response as a dictionary
 
         """
+        # Parameter aliasing for backend compatibility
+        period = interval
+
         params = {
             "period": period,
             "order": order,
@@ -128,7 +131,7 @@ class EodHistoricalApi(BaseEodhdApi):
 
         symbol = validate_normalize_symbol(symbol)
         validate_order(order)
-        validate_period(period)
+        validate_interval(period, data_type="eod")
 
         if from_date is not None:
             params["from"] = from_date.strftime("%Y-%m-%d")
@@ -136,6 +139,62 @@ class EodHistoricalApi(BaseEodhdApi):
             params["to"] = to_date.strftime("%Y-%m-%d")
 
         return await self._make_request(f"eod/{symbol}", params=params)
+
+
+class IntradayHistoricalApi(BaseEodhdApi):
+    """
+    IntradayHistoricalApi endpoint class.
+
+    Provides access to EODHD's Intraday Historical Data API endpoint,
+    which returns historical intraday data for stocks with various time
+    intervals (1m, 5m, 1h) and supports date range filtering.
+
+    This class inherits from BaseEodhdApi and follows the same patterns
+    as other endpoint classes in the library.
+    """
+
+    async def get_intraday_data(
+        self,
+        symbol: str,
+        interval: str = "5m",
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
+        split_dt: bool = False,
+    ) -> dict[str, str | int]:
+        """
+        Get intraday historical data for a supplied symbol.
+
+        Args:
+            symbol: Stock symbol (e.g., "AAPL")
+            interval: Time interval ("1m", "5m", "1h")
+            from_date: Start date for data
+            to_date: End date for data
+            split_dt: If True, splits date and time into separate fields in the output
+
+        Returns:
+            JSON response as a dictionary containing intraday data
+
+        Raises:
+            ValueError: If symbol or interval parameters are invalid
+            aiohttp.ClientError: If the HTTP request fails
+
+        """
+        params = {
+            "interval": interval,
+        }
+
+        # Validate parameters
+        symbol = validate_normalize_symbol(symbol)
+        validate_interval(interval, data_type="intraday")
+
+        if from_date is not None:
+            params["from"] = from_date.strftime("%Y-%m-%d")
+        if to_date is not None:
+            params["to"] = to_date.strftime("%Y-%m-%d")
+        if split_dt:
+            params["split-dt"] = "1"
+
+        return await self._make_request(f"intraday/{symbol}", params=params)
 
 
 class EodhdApi:
@@ -174,3 +233,10 @@ class EodhdApi:
         if "eod_historical_api" not in self._endpoint_instances:
             self._endpoint_instances["eod_historical_api"] = EodHistoricalApi(self.config)
         return cast(EodHistoricalApi, self._endpoint_instances["eod_historical_api"])
+
+    @property
+    def intraday_historical_api(self) -> IntradayHistoricalApi:
+        """Lazily instantiate and return the IntradayHistoricalApi client."""
+        if "intraday_historical_api" not in self._endpoint_instances:
+            self._endpoint_instances["intraday_historical_api"] = IntradayHistoricalApi(self.config)
+        return cast(IntradayHistoricalApi, self._endpoint_instances["intraday_historical_api"])

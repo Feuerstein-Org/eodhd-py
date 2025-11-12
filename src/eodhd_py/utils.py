@@ -25,8 +25,14 @@ def validate_order(order: str) -> bool:
     return True
 
 
-def validate_period(period: str) -> bool:
-    """Validate period parameter."""
-    if period not in ("d", "w", "m"):
-        raise ValueError("Period must be 'd' (daily), 'w' (weekly), or 'm' (monthly)")
+def validate_interval(interval: str, data_type: str = "intraday") -> bool:
+    """Validate interval parameter for EOD or intraday data."""
+    if data_type == "eod":
+        if interval not in ("d", "w", "m"):
+            raise ValueError("Interval must be 'd' (daily), 'w' (weekly), or 'm' (monthly)")
+    elif data_type == "intraday":
+        if interval not in ("1m", "5m", "1h"):
+            raise ValueError("Interval must be '1m', '5m', or '1h'")
+    else:
+        raise ValueError(f"Invalid data_type: {data_type}. Must be 'eod' or 'intraday'")
     return True
