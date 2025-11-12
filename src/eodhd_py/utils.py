@@ -3,12 +3,6 @@
 from re import compile as re_compile
 
 
-class ValidationError(ValueError):
-    """Custom exception for validation errors in EODHD API parameters."""
-
-    pass
-
-
 def validate_normalize_symbol(symbol: str) -> str:
     """Validate and format a stock symbol for EODHD API."""
     IS_MARKET = symbol.count(".") == 2  # noqa: PLR2004
