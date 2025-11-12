@@ -132,8 +132,7 @@ async def test_lazy_loading_property(api_property_name: str, api_class: type) ->
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(("api_property_name", "api_class"), API_ENDPOINTS)
-async def test_shared_session_usage(api_property_name: str, api_class: type) -> None:
+async def test_shared_session_usage() -> None:
     """Test that endpoint instances share the same session and configuration."""
     config = EodhdApiConfig(api_key="demo")
     api = EodhdApi(config=config)
@@ -143,13 +142,12 @@ async def test_shared_session_usage(api_property_name: str, api_class: type) -> 
     for prop_name, _ in API_ENDPOINTS:
         endpoint_instances.append(getattr(api, prop_name))
 
-    # Get the current endpoint instance being tested
-    current_endpoint = getattr(api, api_property_name)
-
     # All endpoints should share the same session and config
-    for other_endpoint in endpoint_instances:
-        assert current_endpoint.session is other_endpoint.session
-        assert current_endpoint.config is other_endpoint.config
+    # Compare each endpoint to the first one
+    first_endpoint = endpoint_instances[0]
+    for endpoint in endpoint_instances[1:]:
+        assert endpoint.session is first_endpoint.session
+        assert endpoint.config is first_endpoint.config
 
 
 @pytest.mark.asyncio
