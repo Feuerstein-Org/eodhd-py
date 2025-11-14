@@ -2,15 +2,17 @@
 
 import pytest
 from aioresponses import aioresponses
-from eodhd_py.base import BaseEodhdApi, EodhdApiConfig, EodHistoricalApi, IntradayHistoricalApi, EodhdApi
+from eodhd_py.base import BaseEodhdApi, EodhdApiConfig, EodHistoricalApi, IntradayHistoricalApi, EodhdApi, UserApi
 import aiohttp
 from typing import Any
 from urllib.parse import urlencode
 
-# API endpoints parameter list for parametrization of the tests: lazy_loading_property, shared_session_usage, async_context_manager_behavior
+# API endpoints to test for lazy loading and shared session
+# Each tuple contains the property name used for lazy loading and the corresponding class
 API_ENDPOINTS = [
     ("eod_historical_api", EodHistoricalApi),
     ("intraday_historical_api", IntradayHistoricalApi),
+    ("user_api", UserApi),
 ]
 
 

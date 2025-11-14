@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import aiohttp
-from typing import cast
+from typing import cast, Any
 from pydantic import BaseModel, Field, ConfigDict
 from .utils import validate_normalize_symbol, validate_order, validate_interval
 
@@ -66,7 +66,7 @@ class BaseEodhdApi:
         self,
         endpoint: str,
         params: dict[str, str] | None = None,
-    ) -> dict[str, str | int]:
+    ) -> dict[str, Any]:
         """
         Make an HTTP request to the EODHD API.
 
@@ -197,6 +197,45 @@ class IntradayHistoricalApi(BaseEodhdApi):
         return await self._make_request(f"intraday/{symbol}", params=params)
 
 
+class UserApi(BaseEodhdApi):
+    """
+    UserApi endpoint class.
+
+    Provides access to EODHD's User API endpoint, which returns information
+    about the user's subscription, API usage limits, and current usage statistics.
+    """
+
+    async def get_user_info(self) -> dict[str, Any]:
+        """
+        Get user subscription and API usage information.
+
+        Note: the apiRequests and remaining_daily_limit fields may not be up-to-date
+        until after making a new request. The apiRequestsDate indicates the last update date.
+
+        If you made 0 requests today, apiRequests will reflect the last valid value (e.g. from 2 days ago).
+
+        Returns:
+            JSON response as a dictionary containing:
+            - name: User's name
+            - email: User's email
+            - subscriptionType: Type of subscription
+            - paymentMethod: Payment method string or "Not Available"
+            - apiRequests: Number of API requests made
+            - apiRequestsDate: Date for the `apiRequests` counter (YYYY-MM-DD)
+            - dailyRateLimit: Daily rate limit (integer)
+            - extraLimit: Any extra limit applied (integer)
+            - inviteToken: Invite token or null
+            - inviteTokenClicked: Number of times invite token was clicked
+            - subscriptionMode: Subscription mode (e.g., "demo", "free")
+            - canManageOrganizations: Boolean indicating organization management rights
+
+        Raises:
+            aiohttp.ClientError: If the HTTP request fails
+
+        """
+        return await self._make_request("user")
+
+
 class EodhdApi:
     """
     EODHD API Client Class
@@ -240,3 +279,10 @@ class EodhdApi:
         if "intraday_historical_api" not in self._endpoint_instances:
             self._endpoint_instances["intraday_historical_api"] = IntradayHistoricalApi(self.config)
         return cast(IntradayHistoricalApi, self._endpoint_instances["intraday_historical_api"])
+
+    @property
+    def user_api(self) -> "UserApi":
+        """Lazily instantiate and return the UserApi client."""
+        if "user_api" not in self._endpoint_instances:
+            self._endpoint_instances["user_api"] = UserApi(self.config)
+        return cast(UserApi, self._endpoint_instances["user_api"])
