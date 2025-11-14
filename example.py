@@ -1,6 +1,6 @@
 """Sample EODHD API usage."""
 
-from eodhd_py.base import EodhdApi
+from eodhd_py import EodhdApi
 import asyncio
 import logging
 

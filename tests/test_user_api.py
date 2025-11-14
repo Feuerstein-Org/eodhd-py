@@ -3,7 +3,7 @@
 import pytest
 
 from conftest import MockApiFactory
-from eodhd_py.base import UserApi
+from eodhd_py.user import UserApi
 
 
 @pytest.mark.asyncio

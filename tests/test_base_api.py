@@ -2,7 +2,11 @@
 
 import pytest
 from aioresponses import aioresponses
-from eodhd_py.base import BaseEodhdApi, EodhdApiConfig, EodHistoricalApi, IntradayHistoricalApi, EodhdApi, UserApi
+from eodhd_py.base import BaseEodhdApi, EodhdApiConfig
+from eodhd_py.eod_historical import EodHistoricalApi
+from eodhd_py.intraday_historical import IntradayHistoricalApi
+from eodhd_py.client import EodhdApi
+from eodhd_py.user import UserApi
 import aiohttp
 from typing import Any
 from urllib.parse import urlencode
