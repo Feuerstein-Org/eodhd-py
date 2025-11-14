@@ -8,9 +8,10 @@ from unittest.mock import patch, MagicMock
 @pytest.mark.asyncio
 async def test_eod_historical_api_property_caching() -> None:
     """Test that eod_historical_api property caches instances correctly."""
-    with patch("eodhd_py.base.EodHistoricalApi", autospec=True) as mock_eod_class:
+    with patch("eodhd_py.base.EodHistoricalApi") as mock_eod_class:
         mock_instance = MagicMock()
         mock_eod_class.return_value = mock_instance
+        mock_eod_class.__name__ = "EodHistoricalApi"
 
         api = EodhdApi()
 
@@ -31,11 +32,12 @@ async def test_eod_historical_api_property_caching() -> None:
 async def test_eod_historical_api_with_config_object() -> None:
     """Test eod_historical_api property when EodhdApi is initialized with config object."""
     with (
-        patch("eodhd_py.base.EodHistoricalApi", autospec=True) as mock_eod_class,
+        patch("eodhd_py.base.EodHistoricalApi") as mock_eod_class,
         patch("eodhd_py.base.EodhdApiConfig", autospec=True) as mock_config_class,
     ):
         mock_instance = MagicMock()
         mock_eod_class.return_value = mock_instance
+        mock_eod_class.__name__ = "EodHistoricalApi"
 
         mock_config = MagicMock()
         mock_config_class.return_value = mock_config

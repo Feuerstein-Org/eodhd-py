@@ -121,12 +121,12 @@ async def test_lazy_loading_property(api_property_name: str, api_class: type) ->
     api = EodhdApi(config=config)
 
     # Property should not exist in _endpoint_instances initially
-    assert api_property_name not in api._endpoint_instances
+    assert api_class.__name__ not in api._endpoint_instances
 
     # First access should create the instance
     endpoint_instance = getattr(api, api_property_name)
     assert isinstance(endpoint_instance, api_class)
-    assert api_property_name in api._endpoint_instances
+    assert api_class.__name__ in api._endpoint_instances
 
     # Second access should return the same instance
     endpoint_instance2 = getattr(api, api_property_name)

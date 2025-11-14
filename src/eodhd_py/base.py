@@ -266,23 +266,24 @@ class EodhdApi:
         if self.config.close_session_on_aexit and not self.config.session.closed:
             await self.config.session.close()
 
+    def _get_endpoint(self, endpoint_class: type[BaseEodhdApi]) -> BaseEodhdApi:
+        """Generic endpoint getter to reduce boilerplate."""
+        key = endpoint_class.__name__
+        if key not in self._endpoint_instances:
+            self._endpoint_instances[key] = endpoint_class(self.config)
+        return self._endpoint_instances[key]
+
     @property
     def eod_historical_api(self) -> EodHistoricalApi:
-        """Lazily instantiate and return the EodHistoricalApi client."""
-        if "eod_historical_api" not in self._endpoint_instances:
-            self._endpoint_instances["eod_historical_api"] = EodHistoricalApi(self.config)
-        return cast(EodHistoricalApi, self._endpoint_instances["eod_historical_api"])
+        """EodHistoricalApi client."""
+        return cast(EodHistoricalApi, self._get_endpoint(EodHistoricalApi))
 
     @property
     def intraday_historical_api(self) -> IntradayHistoricalApi:
-        """Lazily instantiate and return the IntradayHistoricalApi client."""
-        if "intraday_historical_api" not in self._endpoint_instances:
-            self._endpoint_instances["intraday_historical_api"] = IntradayHistoricalApi(self.config)
-        return cast(IntradayHistoricalApi, self._endpoint_instances["intraday_historical_api"])
+        """IntradayHistoricalApi client."""
+        return cast(IntradayHistoricalApi, self._get_endpoint(IntradayHistoricalApi))
 
     @property
     def user_api(self) -> "UserApi":
-        """Lazily instantiate and return the UserApi client."""
-        if "user_api" not in self._endpoint_instances:
-            self._endpoint_instances["user_api"] = UserApi(self.config)
-        return cast(UserApi, self._endpoint_instances["user_api"])
+        """UserApi client."""
+        return cast(UserApi, self._get_endpoint(UserApi))
