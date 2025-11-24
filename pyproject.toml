@@ -1,6 +1,6 @@
 [project]
 name = "eodhd-py"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python Implementation for EODHD API"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -72,7 +72,7 @@ exclude = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["PLR2004"]
+"tests/*" = ["PLR2004", "PLR0913"]
 
 [tool.pyright]
 pythonVersion = "3.13"

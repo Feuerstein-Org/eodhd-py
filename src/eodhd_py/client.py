@@ -25,16 +25,17 @@ class EodhdApi:
 
     async def __aenter__(self) -> "EodhdApi":
         """Enter the asynchronous context manager."""
+        # Increment reference count for session usage
+        self.config.increment_session_ref()
         return self
 
     # TODO: handle exceptions
     async def __aexit__(self, *args) -> None:  # type: ignore # noqa
-        """Exit the asynchronous context manager and close session."""
-        await self.close()
-
-    async def close(self) -> None:
-        """Close the shared session."""
-        if self.config.close_session_on_aexit and not self.config.session.closed:
+        """Exit the asynchronous context manager and close session if no other instances are using it."""
+        # Decrement reference count
+        self.config.decrement_session_ref()
+        # Only close session when no more references exist
+        if self.config.should_close_session() and not self.config.session.closed:
             await self.config.session.close()
 
     def _get_endpoint(self, endpoint_class: type[BaseEodhdApi]) -> BaseEodhdApi:

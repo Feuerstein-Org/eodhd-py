@@ -43,33 +43,31 @@ async def test_base_eodhdapi_init(config: EodhdApiConfig | None, api_key: str, e
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("endpoint", "params", "expected_response", "expected_url_params"),
+    ("endpoint", "params", "expected_response"),
     [
-        ("eod/AAPL", {"period": "d", "order": "a"}, {"data": "aapl_daily"}, {"period": "d", "order": "a"}),
-        ("eod/GOOG", {"period": "w"}, {"data": "goog_weekly"}, {"period": "w"}),
-        ("eod/MSFT", None, {"data": "msft_default"}, {}),
-        ("eod/TSLA", {}, {"data": "tsla_empty"}, {}),
+        ("eod/AAPL", {"period": "d", "order": "a"}, {"data": "aapl_daily"}),
+        ("eod/GOOG", {"period": "w"}, {"data": "goog_weekly"}),
+        ("eod/MSFT", {}, {"data": "msft_default"}),
+        ("eod/TSLA", {}, {"data": "tsla_empty"}),
         (
             "eod/NVDA",
             {"period": "m", "order": "d", "from": "2023-01-01"},
             {"data": "nvda_monthly"},
-            {"period": "m", "order": "d", "from": "2023-01-01"},
         ),
-        ("/eod/AMD/", {"period": "d"}, {"data": "amd_daily"}, {"period": "d"}),
-        ("fundamentals/AMZN", {"filter": "General"}, {"fundamentals": "amazon_data"}, {"filter": "General"}),
+        ("/eod/AMD/", {"period": "d"}, {"data": "amd_daily"}),
+        ("fundamentals/AMZN", {"filter": "General"}, {"fundamentals": "amazon_data"}),
     ],
 )
 async def test_make_request_parameters(
-    endpoint: str, params: dict[str, str], expected_response: dict[str, str], expected_url_params: dict[str, str]
+    endpoint: str, params: dict[str, str], expected_response: dict[str, str], test_config: EodhdApiConfig
 ) -> None:
     """Test that _make_request passes parameters correctly with various inputs."""
     # Create a real aiohttp session
     session = aiohttp.ClientSession()
 
     try:
-        # Create config with the real session
-        config = EodhdApiConfig()
-        config.session = session
+        # Use test_config with the real session
+        test_config.session = session
 
         # Use aioresponses to mock the HTTP response
         with aioresponses() as mock_http:
@@ -77,7 +75,7 @@ async def test_make_request_parameters(
             clean_endpoint = endpoint.strip("/")  # In the real code it also gets stripped
 
             # api_token and fmt are always added
-            all_params = {"api_token": "demo", "fmt": "json"}
+            all_params = {"api_token": test_config.api_key, "fmt": "json"}
             if params:
                 all_params.update(params)
 
@@ -85,7 +83,7 @@ async def test_make_request_parameters(
 
             mock_http.get(expected_url, payload=expected_response)  # type: ignore
 
-            api = BaseEodhdApi(config=config)
+            api = BaseEodhdApi(config=test_config)
             result = await api._make_request(endpoint, params)
 
             assert result == expected_response
@@ -102,16 +100,15 @@ async def test_make_request_parameters(
             assert f"{base_url}/{clean_endpoint}" in str(actual_url)
 
             request_params = request_call.kwargs["params"]
-            assert request_params["api_token"] == "demo"
+            assert request_params["api_token"] == test_config.api_key
             assert request_params["fmt"] == "json"
 
             # Check all expected additional parameters
-            for param_key, param_value in expected_url_params.items():
+            for param_key, param_value in params.items():
                 assert request_params[param_key] == param_value
 
             # Ensure no unexpected parameters were added
-            expected_param_count = 2 + len(expected_url_params)  # 2 for api_token and fmt
-            assert len(request_params) == expected_param_count
+            assert len(request_params) == len(params) + 2  # +2 for api_token and fmt
 
     finally:
         await session.close()
@@ -160,11 +157,69 @@ async def test_shared_session_usage() -> None:
 @pytest.mark.parametrize(("api_property_name", "api_class"), API_ENDPOINTS)
 async def test_async_context_manager_behavior(api_property_name: str, api_class: type) -> None:
     """Test async context manager behavior for API endpoints."""
-    config = EodhdApiConfig(api_key="demo", close_session_on_aexit=True)
+    config = EodhdApiConfig()
 
     async with EodhdApi(config=config) as api:
         endpoint_instance = getattr(api, api_property_name)
         assert not endpoint_instance.session.closed
 
-    # Session should be closed after exiting context
+    # Session should be closed after exiting context (ref count reaches 0)
     assert endpoint_instance.session.closed
+
+
+# Session Reference Counting Tests
+@pytest.mark.asyncio
+async def test_session_ref_count_increment_decrement() -> None:
+    """Test that session reference count is properly incremented and decremented."""
+    config = EodhdApiConfig()
+
+    # Initial ref count should be 0 and should_close_session True
+    assert config._session_ref_count == 0
+    assert config.should_close_session() is True
+
+    # Manually increment and decrement and should_close_session False
+    config.increment_session_ref()
+    assert config._session_ref_count == 1
+    assert config.should_close_session() is False
+
+    config.increment_session_ref()
+    assert config._session_ref_count == 2
+
+    config.decrement_session_ref()
+    assert config._session_ref_count == 1
+
+    config.decrement_session_ref()
+    assert config._session_ref_count == 0
+    assert config.should_close_session() is True
+
+    # Should not go below 0
+    config.decrement_session_ref()
+    assert config._session_ref_count == 0
+    assert config.should_close_session() is True
+
+
+@pytest.mark.asyncio
+async def test_multiple_nested_context_managers() -> None:
+    """Test that multiple nested context managers share session and manage ref count correctly."""
+    config = EodhdApiConfig()
+
+    assert config._session_ref_count == 0
+
+    async with BaseEodhdApi(config=config) as api1:
+        assert config._session_ref_count == 1
+        assert not api1.config.session.closed
+
+        async with EodhdApi(config=config) as api2:
+            # Both should share the same session
+            assert api1.config.session is api2.config.session
+            assert config._session_ref_count == 2
+            assert not api1.config.session.closed
+            assert not api2.config.session.closed
+
+        # After exiting second context, ref count should be 1, session still open
+        assert config._session_ref_count == 1
+        assert not api1.config.session.closed
+
+    # After exiting both contexts, ref count should be 0, session closed
+    assert config._session_ref_count == 0
+    assert config.session.closed

@@ -7,6 +7,15 @@ from eodhd_py.base import BaseEodhdApi, EodhdApiConfig
 from pytest_mock import MockerFixture
 import aiohttp
 import pytest
+import random
+import string
+
+
+def generate_random_api_key() -> str:
+    """Generate a random API key matching [A-Za-z0-9.]{16,32}."""
+    chars = string.ascii_letters + string.digits + "."
+    length = random.randint(16, 32)
+    return "".join(random.choice(chars) for _ in range(length))
 
 
 @dataclass
@@ -22,7 +31,6 @@ class MockApiConfig:
 
 
 # Factories
-
 T = TypeVar("T", bound=BaseEodhdApi)
 
 
@@ -48,7 +56,7 @@ class MockApiFactory:
             config = MockApiConfig(**kwargs)
 
         # Create real config and instance
-        real_config = EodhdApiConfig(api_key=config.api_key, close_session_on_aexit=config.close_session_on_aexit)
+        real_config = EodhdApiConfig(api_key=config.api_key)
         instance = api_class(config=real_config)
 
         # Mock only _make_request
@@ -67,3 +75,26 @@ class MockApiFactory:
 def mock_api_factory(mocker: MockerFixture) -> MockApiFactory:
     """For integration testing of subclasses."""
     return MockApiFactory(mocker)
+
+
+@pytest.fixture
+def test_config() -> EodhdApiConfig:
+    """
+    Fixture providing a pre-configured EodhdApiConfig with standard test values.
+
+    This eliminates the need to manually specify rate limits in every test.
+
+    Examples:
+        def test_something(test_config):
+            api = BaseEodhdApi(config=test_config)
+            # Rate limits are already configured
+
+    """
+    return EodhdApiConfig(
+        api_key=generate_random_api_key(),
+        daily_calls_rate_limit=50000,
+        daily_remaining_limit=4000,
+        minute_requests_rate_limit=100,
+        minute_remaining_limit=50,
+        extra_limit=10,
+    )
